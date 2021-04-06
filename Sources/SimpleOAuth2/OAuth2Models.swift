@@ -15,8 +15,8 @@ public struct OAuth2Credentials: Codable {
     public let tokenType: String?
     public let refreshToken: String?
     public let scope: String?
-    public let expiresIn: Int?
-    
+    public let expires: Date?
+
     enum CodingKeys: String, CodingKey {
         case accessToken
         case tokenType
@@ -32,22 +32,23 @@ public struct OAuth2Credentials: Codable {
         refreshToken = try? container.decode(String.self, forKey: .refreshToken)
         scope = try? container.decode(String.self, forKey: .scope)
 
-        var expiresIn: Int?
-        if let expires = try? container.decode(Int.self, forKey: .expires) {
-           expiresIn = expires
-        } else if let expires = try? container.decode(Int.self, forKey: .expiresIn) {
-            expiresIn = expires
+        var expiresAt: Date?
+        if let expires = try? container.decode(Double.self, forKey: .expires) {
+            expiresAt = Date().addingTimeInterval(expires)
+        } else if let expires = try? container.decode(Double.self, forKey: .expiresIn) {
+            expiresAt = Date().addingTimeInterval(expires)
         }
-        self.expiresIn = expiresIn
+
+        expires = expiresAt
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(accessToken, forKey: .accessToken)
         try? container.encode(tokenType, forKey: .tokenType)
         try? container.encode(refreshToken, forKey: .refreshToken)
         try? container.encode(scope, forKey: .scope)
-        try? container.encode(expiresIn, forKey: .expiresIn)
+        try? container.encode(expires, forKey: .expires)
     }
 }
 
@@ -58,7 +59,7 @@ public struct OAuth2Request {
     let redirectUri: String
     let clientSecret: String
     let scopes: [String]
-    
+
     public init(authUrl: String,
                 tokenUrl: String,
                 clientId: String,
